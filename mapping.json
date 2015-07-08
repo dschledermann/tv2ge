@@ -1,0 +1,49 @@
+{
+ "pages" : {
+  "columns" : {
+   "field_rightcontent" : {
+    "type" : "column",
+    "colPos": 11
+   },
+   "field_maincontent" : {
+    "type" : "column",
+    "colPos" : 10
+   },
+   "field_sidebarcontent" : {
+    "type" : "column",
+    "colPos" : 12
+   }
+  },
+  "types" : {
+   "1" : "frontpage",
+   "2" : "subpage"
+  }
+ },
+ "fce" : {
+  "columns" : {
+   "field_rightcontent" : {
+    "type" : "column",
+    "colPos" : 0
+   },
+   "field_leftcontent" : {
+    "type" : "column",
+    "colPos" : 1
+   },
+   "field_content" : {
+    "type" : "column",
+    "colPos" : 0
+   },
+   "field_header" : {
+    "type" : "header",
+    "colPos" : 1
+   }   
+  },
+  "types" : {
+   "3" : "bluebox",
+   "4" : "redbox",
+   "5" : "5colfrontpage",
+   "6" : "navsubmenu",
+   "7" : "maininfobox"
+  }
+ }
+}
