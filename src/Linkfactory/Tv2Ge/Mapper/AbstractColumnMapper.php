@@ -2,7 +2,7 @@
 
 namespace Linkfactory\Tv2Ge\Mapper;
 
-abstract class AbstractColumnMapper {
+abstract class AbstractColumnMapper extends AbstractMapper {
 	protected function makeColumnList($columnNames) {
 		$columnList = 'uid';
 		foreach ($columnNames as $columnName) {
@@ -10,8 +10,5 @@ abstract class AbstractColumnMapper {
 		}
 		return $columnList;
 	}
-
-	abstract public function createHeader();
-
-	abstract public function remapElements();
 }
+

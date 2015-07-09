@@ -7,15 +7,10 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-
-use Linkfactory\Tv2Ge\Mapper\PageLayoutMapper;
-use Linkfactory\Tv2Ge\Mapper\PageColumnMapper;
-use Linkfactory\Tv2Ge\Mapper\FCELayoutMapper;
-use Linkfactory\Tv2Ge\Mapper\FCEColumnMapper;
+use Exception;
+use PDO;
 
 class Tv2GeCommand extends Command {
-	public $db;
-
 	protected function configure() {
 		$this
 			->setName('tv2ge:remap')
@@ -41,11 +36,26 @@ class Tv2GeCommand extends Command {
 
 	protected function execute(InputInterface $in, OutputInterface $out) {
 		$mapping = json_decode(file_get_contents($in->getArgument('mapping-json')), true);
-		$this->db = new PDO($in->getArgument('dsn'), $in->getArgument('username'), $in->getArgument('password'));
 
-		new PageLayoutMapper($this->db, $mapping['pages']['types']);
-		new PageColumnMapper($this->db, $mapping['pages']['columns']);
-		new FCELayoutMapper($this->db, $mapping['fce']['types']);
-		new FCEColumnMapper($this->db, $mapping['fce']['columns']);
+		if ( ! is_array($mapping)) {
+			throw new Exception("Mapping data could not be parsed");
+		}
+
+		$db = new PDO($in->getArgument('dsn'), $in->getArgument('username'), $in->getArgument('password'));
+		$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+		$conversions = array(
+			new \Linkfactory\Tv2Ge\Mapper\GEFieldCreateMapper,
+			new \Linkfactory\Tv2Ge\Mapper\PageLayoutMapper,
+			new \Linkfactory\Tv2Ge\Mapper\PageColumnMapper,
+			new \Linkfactory\Tv2Ge\Mapper\FCELayoutMapper,
+			new \Linkfactory\Tv2Ge\Mapper\FCEColumnMapper,
+			new \Linkfactory\Tv2Ge\Mapper\FCE2GEMapper,
+		);
+
+		foreach ($conversions as $conversion) {
+			$out->writeln("<info>" . $conversion->getDescription() . "</info>");
+			$conversion->execute($db, $mapping);
+		}
 	}
 }

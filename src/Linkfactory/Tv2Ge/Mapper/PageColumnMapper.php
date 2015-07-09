@@ -2,11 +2,16 @@
 
 namespace Linkfactory\Tv2Ge\Mapper;
 use Exception;
+use PDO;
 
 class PageColumnMapper extends AbstractColumnMapper {
-	public function __construct($db, $map) {
+	public function getDescription() {
+		return "Assigning page columns to content elements";
+	}
+
+	public function execute($db, $map) {
 		$this->db = $db;
-		$fields = $this->makeColumnList(array_keys($map));
+		$fields = $this->makeColumnList(array_keys($map['pages']['columns']));
 		
 		// This statement is used to extract all the current mapping
 		$stmtPages = $this->db->prepare(
@@ -18,7 +23,7 @@ class PageColumnMapper extends AbstractColumnMapper {
 		$stmtPages->execute();
 
 		while ($row = $stmtPages->fetch(PDO::FETCH_ASSOC)) {
- 			foreach ($map as $column => $conf) {
+ 			foreach ($map['pages']['columns'] as $column => $conf) {
 				$columnContent = $row[$column];
 
 				switch ($conf['type']) {
@@ -84,9 +89,14 @@ class PageColumnMapper extends AbstractColumnMapper {
 		static $stmtUpdateElement;
 		static $stmtRefCopy;
 
+		// Only work if there is anything on the list
+		if ( ! trim($elementList)) {
+			return;
+		}
+
 		// Used for check if an element has already been remapped		
 		if (! $stmtCheckElement) {
-			$stmpCheckElement = $this->db->prepare(
+			$stmtCheckElement = $this->db->prepare(
 				"SELECT COUNT(*) FROM tt_content " .
 				"WHERE colPos = :colPos " .
 				"AND (uid = :element_uid OR records = :tt_content_element_uid) " .
@@ -97,7 +107,7 @@ class PageColumnMapper extends AbstractColumnMapper {
 		if (! $stmtUpdateElement) {
 			$stmtUpdateElement = $this->db->prepare(
 				"UPDATE tt_content " .
-				"  SET colPos = :colPos " .
+				"  SET colPos = :colPos, " .
 				"      sorting = :sorting " .
 				"  WHERE pid = :pid " .
 				"    AND uid = :element_uid");
@@ -114,25 +124,33 @@ class PageColumnMapper extends AbstractColumnMapper {
 
 		// Traverse the elements
 		foreach (explode(',', $elementList) as $sorting => $uid) {
-			$values = array(
-				":element_uid" => $uid,
-				":sorting" => $sorting * 100,
-				":tt_content_element_uid" => "tt_content_$uid",
-				":pid" => $pid,
-				":colPos" => $colPos);
 
 			// Check if the element was moved already
-			$stmtCheckElement->execute($values);
+			$stmtCheckElement->execute(array(
+				':colPos' => $colPos,
+				':element_uid' => $uid,
+				':tt_content_element_uid' => 'tt_content_' . $uid,
+				':pid' => $pid));
+
 			list($alreadyUpdated) = $stmtCheckElement->fetch(PDO::FETCH_NUM);
 
 			// No?
 			if (! $alreadyUpdated) {
-				$stmtUpdateElement->execute($values);
+				$stmtUpdateElement->execute(array(
+					':colPos' => $colPos,
+					':sorting' => $sorting * 100,
+					':pid' => $pid,
+					':element_uid' => $uid));
 
 				// Could not moved remap?
 				// We assume that pid differs
 				if ($stmtUpdateElement->rowCount() == 0) {
-					$stmtRefCopy->execute($values);
+					$stmtRefCopy->execute(array(
+						":element_uid" => $uid,
+						":sorting" => $sorting * 100,
+						":tt_content_element_uid" => "tt_content_$uid",
+						":pid" => $pid,
+						":colPos" => $colPos));
 				}
 			}
 		}
