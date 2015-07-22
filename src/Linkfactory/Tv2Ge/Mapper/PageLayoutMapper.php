@@ -23,7 +23,7 @@ class PageLayoutMapper {
 
 		// Executing
 		foreach ($map['pages']['types'] as $tvid => $belayout) {
-			$map = array(':tvlayout' => $tvid, ':belayout' => $belayout);
+			$map = array(':tvlayout' => $tvid, ':belayout' => "file__" . $belayout);
 			$stmt_here->execute($map);
 			$stmt_next->execute($map);
 		}
